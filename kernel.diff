@@ -1,0 +1,123 @@
+diff --git a/.config b/.config
+index aa68c06..387f194 100644
+--- a/.config
++++ b/.config
+@@ -54,7 +54,7 @@ CONFIG_THREAD_INFO_IN_TASK=y
+ CONFIG_INIT_ENV_ARG_LIMIT=32
+ CONFIG_CROSS_COMPILE=""
+ # CONFIG_COMPILE_TEST is not set
+-CONFIG_LOCALVERSION=""
++CONFIG_LOCALVERSION="-Carly-Palicz-10413844"
+ # CONFIG_LOCALVERSION_AUTO is not set
+ CONFIG_HAVE_KERNEL_GZIP=y
+ CONFIG_HAVE_KERNEL_BZIP2=y
+diff --git a/Makefile b/Makefile
+index b103777..36cf308 100644
+--- a/Makefile
++++ b/Makefile
+@@ -910,7 +910,7 @@ export mod_sign_cmd
+ 
+ 
+ ifeq ($(KBUILD_EXTMOD),)
+-core-y		+= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/ block/
++core-y		+= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/ block/ my_syscall/ my_syscall2/
+ 
+ vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
+ 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index e93ef0b..4625bbc 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -379,3 +379,5 @@
+ 545	x32	execveat		compat_sys_execveat/ptregs
+ 546	x32	preadv2			compat_sys_preadv64v2
+ 547	x32	pwritev2		compat_sys_pwritev64v2
++548	64	my_syscall		my_syscall
++549	64	my_syscall2		my_syscall2
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index 9c337b0..5de3673 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -884,6 +884,7 @@ void __init setup_arch(char **cmdline_p)
+ 	 */
+ 	__flush_tlb_all();
+ #else
++	printk(KERN_INFO "Hello World from Carly Palicz (10413844)\n"); 
+ 	printk(KERN_INFO "Command line: %s\n", boot_command_line);
+ #endif
+ 
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 91a740f..913612a 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -902,5 +902,7 @@ asmlinkage long sys_pkey_mprotect(unsigned long start, size_t len,
+ 				  unsigned long prot, int pkey);
+ asmlinkage long sys_pkey_alloc(unsigned long flags, unsigned long init_val);
+ asmlinkage long sys_pkey_free(int pkey);
++asmlinkage int my_syscall(int x, int y);
++asmlinkage int my_syscall2(char* str);
+ 
+ #endif
+diff --git a/my_syscall/Makefile b/my_syscall/Makefile
+new file mode 100644
+index 0000000..8903942
+--- /dev/null
++++ b/my_syscall/Makefile
+@@ -0,0 +1 @@
++obj-y := my_syscall.o
+diff --git a/my_syscall/my_syscall.c b/my_syscall/my_syscall.c
+new file mode 100644
+index 0000000..584dbd5
+--- /dev/null
++++ b/my_syscall/my_syscall.c
+@@ -0,0 +1,7 @@
++#include <linux/kernel.h>
++
++asmlinkage int my_syscall(int x, int y)
++{
++	printk("%d\n", x+y);
++	return x+y;
++}
+diff --git a/my_syscall2/Makefile b/my_syscall2/Makefile
+new file mode 100644
+index 0000000..209e095
+--- /dev/null
++++ b/my_syscall2/Makefile
+@@ -0,0 +1 @@
++obj-y := my_syscall2.o
+diff --git a/my_syscall2/my_syscall2.c b/my_syscall2/my_syscall2.c
+new file mode 100644
+index 0000000..bfc6419
+--- /dev/null
++++ b/my_syscall2/my_syscall2.c
+@@ -0,0 +1,30 @@
++#include <linux/kernel.h>
++#include <linux/string.h>
++
++asmlinkage int my_syscall2(char* str)
++{
++	int length = strlen(str);
++	if (length > 128)
++	{
++		return -1;
++	}
++
++	else
++	{	
++		int count = 0;
++		int i = 0;
++		while (i < length)
++		{
++			if (str[i] == 'o')
++			{
++				str[i] = '0';
++				count++;
++			}
++			i++;
++
++		}
++		printk("%s\n", str);
++		return count;
++	}
++
++}
